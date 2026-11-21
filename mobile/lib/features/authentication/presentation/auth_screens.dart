@@ -1,0 +1,175 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../core/l10n/app_strings.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/widgets.dart';
+import '../../settings/presentation/settings_controller.dart';
+import 'auth_controller.dart';
+
+class AuthScreen extends StatefulWidget {
+  const AuthScreen({super.key});
+  @override
+  State<AuthScreen> createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends State<AuthScreen> {
+  bool register = false;
+  String accountType = 'personal';
+  final name = TextEditingController();
+  final email = TextEditingController();
+  final pass = TextEditingController();
+  final form = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final auth = context.watch<AuthController>();
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Form(
+                key: form,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  const SizedBox(height: 16),
+                  Text(s.t('app_name'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w700, color: DeenColors.accent)),
+                  const SizedBox(height: 8),
+                  Text(s.t('tagline'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: DeenColors.textSecondary, height: 1.6)),
+                  const SizedBox(height: 28),
+                  if (!auth.available)
+                    DeenCard(
+                      color: DeenColors.sage,
+                      child: Text(s.t('firebase_missing'), style: const TextStyle(height: 1.6)),
+                    ),
+                  if (auth.available) ...[
+                    if (register) ...[
+                      TextFormField(
+                          controller: name,
+                          decoration: InputDecoration(labelText: s.t('name')),
+                          validator: (v) => (v ?? '').trim().isEmpty ? '•' : null),
+                      const SizedBox(height: 12),
+                    ],
+                    TextFormField(
+                        controller: email,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(labelText: s.t('email')),
+                        validator: (v) => (v ?? '').contains('@') ? null : '•'),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                        controller: pass,
+                        obscureText: true,
+                        decoration: InputDecoration(labelText: s.t('password')),
+                        validator: (v) => (v ?? '').length >= 6 ? null : '•'),
+                    if (register) ...[
+                      const SizedBox(height: 12),
+                      SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(value: 'personal', label: Text('Personal')),
+                          ButtonSegment(value: 'public', label: Text('Public')),
+                        ],
+                        selected: {accountType},
+                        onSelectionChanged: (v) => setState(() => accountType = v.first),
+                      ),
+                    ],
+                    if (auth.error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(auth.error!, style: const TextStyle(color: Colors.red)),
+                      ),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: auth.busy
+                          ? null
+                          : () async {
+                              if (!form.currentState!.validate()) return;
+                              register
+                                  ? await auth.register(name.text, email.text, pass.text, accountType)
+                                  : await auth.signIn(email.text, pass.text);
+                            },
+                      child: auth.busy
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Text(register ? s.t('register') : s.t('login')),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                      onPressed: auth.busy ? null : () => auth.google(),
+                      child: Text(s.t('google_signin')),
+                    ),
+                    if (!register)
+                      TextButton(
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                        child: Text(s.t('forgot_password')),
+                      ),
+                    TextButton(
+                      onPressed: () => setState(() => register = !register),
+                      child: Text(register ? s.t('have_account') : s.t('no_account')),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => context.read<SettingsController>().setGuest(true),
+                    child: Text(s.t('continue_guest')),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    for (final l in const [('bn', 'বাংলা'), ('en', 'English'), ('ar', 'العربية')])
+                      TextButton(
+                        onPressed: () => context.read<SettingsController>().setLang(l.$1),
+                        child: Text(l.$2),
+                      ),
+                  ]),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
+  @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final email = TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final auth = context.watch<AuthController>();
+    return Scaffold(
+      appBar: AppBar(title: Text(s.t('forgot_password'))),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(children: [
+          TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: s.t('email'))),
+          if (auth.error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(auth.error!, style: const TextStyle(color: Colors.red))),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: auth.busy
+                ? null
+                : () async {
+                    final ok = await auth.reset(email.text);
+                    if (ok && context.mounted) {
+                      showMsg(context, s.t('reset_sent'));
+                      Navigator.pop(context);
+                    }
+                  },
+            child: Text(s.t('send_reset')),
+          ),
+        ]),
+      ),
+    );
+  }
+}

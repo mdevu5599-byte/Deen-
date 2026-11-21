@@ -1,0 +1,16 @@
+{
+  "indexes": [
+    {"collectionGroup": "hadith", "queryScope": "COLLECTION", "fields": [{"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "category", "order": "ASCENDING"}]},
+    {"collectionGroup": "hadith", "queryScope": "COLLECTION", "fields": [{"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "updatedAt", "order": "DESCENDING"}]},
+    {"collectionGroup": "reminders", "queryScope": "COLLECTION", "fields": [{"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "group", "order": "ASCENDING"}]},
+    {"collectionGroup": "duas", "queryScope": "COLLECTION", "fields": [{"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "category", "order": "ASCENDING"}]},
+    {"collectionGroup": "notification_jobs", "queryScope": "COLLECTION", "fields": [{"fieldPath": "status", "order": "ASCENDING"}, {"fieldPath": "scheduleAt", "order": "ASCENDING"}]},
+    {"collectionGroup": "notification_logs", "queryScope": "COLLECTION", "fields": [{"fieldPath": "createdAt", "order": "DESCENDING"}]},
+    {"collectionGroup": "audit_logs", "queryScope": "COLLECTION", "fields": [{"fieldPath": "createdAt", "order": "DESCENDING"}]},
+    {"collectionGroup": "prayer_records", "queryScope": "COLLECTION", "fields": [{"fieldPath": "uid", "order": "ASCENDING"}, {"fieldPath": "date", "order": "DESCENDING"}]},
+    {"collectionGroup": "ibadah_records", "queryScope": "COLLECTION", "fields": [{"fieldPath": "uid", "order": "ASCENDING"}, {"fieldPath": "date", "order": "DESCENDING"}]},
+    {"collectionGroup": "journals", "queryScope": "COLLECTION", "fields": [{"fieldPath": "uid", "order": "ASCENDING"}, {"fieldPath": "date", "order": "DESCENDING"}]},
+    {"collectionGroup": "users", "queryScope": "COLLECTION", "fields": [{"fieldPath": "accountType", "order": "ASCENDING"}, {"fieldPath": "createdAt", "order": "DESCENDING"}]}
+  ],
+  "fieldOverrides": []
+}

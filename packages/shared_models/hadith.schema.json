@@ -1,0 +1,5 @@
+{"$schema":"http://json-schema.org/draft-07/schema#","title":"Hadith","type":"object",
+ "required":["id","status","category","arabic","bn","book","number","grade"],
+ "properties":{"id":{"type":"string"},"status":{"enum":["draft","pending","verified","rejected"]},"category":{"type":"string"},
+ "arabic":{"type":"string"},"bn":{"type":"string"},"en":{"type":"string"},"explanationBn":{"type":"string"},"lessonBn":{"type":"string"},
+ "book":{"type":"string"},"number":{"type":"string"},"narrator":{"type":"string"},"grade":{"type":"string"},"related":{"type":"array","items":{"type":"string"}}}}
