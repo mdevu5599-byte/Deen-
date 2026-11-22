@@ -39,12 +39,12 @@ class PrayerCalculator {
     final pt = PrayerTimes(Coordinates(lat, lng), DateComponents.from(date), params);
     return PrayerDay(
       DateTime(date.year, date.month, date.day),
-      pt.fajr!.toLocal(),
-      pt.sunrise!.toLocal(),
-      pt.dhuhr!.toLocal(),
-      pt.asr!.toLocal(),
-      pt.maghrib!.toLocal(),
-      pt.isha!.toLocal(),
+      pt.fajr.toLocal(),
+      pt.sunrise.toLocal(),
+      pt.dhuhr.toLocal(),
+      pt.asr.toLocal(),
+      pt.maghrib.toLocal(),
+      pt.isha.toLocal(),
     );
   }
 }

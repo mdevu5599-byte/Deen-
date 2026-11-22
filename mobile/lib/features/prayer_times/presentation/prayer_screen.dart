@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/l10n/date_utils.dart';
-import '../../../core/widgets/widgets.dart';
 import '../../notifications/presentation/notification_settings_screen.dart';
 import '../../settings/presentation/prayer_settings_screen.dart';
 import '../../settings/presentation/settings_controller.dart';

@@ -1,10 +1,31 @@
 name: Build DEEN
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - 'scripts/**'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - 'scripts/**'
+      - '.github/workflows/build.yml'
+
+permissions:
+  contents: read
 
 jobs:
   android:
     runs-on: ubuntu-latest
+    env:
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
     defaults:
       run:
         working-directory: mobile
@@ -19,17 +40,41 @@ jobs:
           flutter-version: '3.27.4'
           channel: stable
           cache: true
-      - name: Generate platform folders
+
+      - name: Generate Android platform folders
         run: flutter create --platforms=android --org com.deen --project-name deen . && rm -f test/widget_test.dart
+
+      - name: Configure Firebase Android app (optional)
+        if: ${{ env.GOOGLE_SERVICES_JSON != '' }}
+        run: printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+
+      - name: Configure upload signing key (optional)
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/deen-upload-key.jks"
+          cat > android/key.properties <<PROPS
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=$RUNNER_TEMP/deen-upload-key.jks
+          PROPS
+
       - name: Patch Android config
         run: python3 ../scripts/patch_android.py
+
       - run: flutter pub get
       - run: flutter analyze
-        continue-on-error: true
       - run: flutter test
-        continue-on-error: true
-      - run: flutter build apk --release
+      - name: Build release APK
+        run: flutter build apk --release
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
+
       - uses: actions/upload-artifact@v4
         with:
           name: deen-android
-          path: mobile/build/app/outputs/flutter-apk/app-release.apk
+          path: |
+            mobile/build/app/outputs/flutter-apk/app-release.apk
+            mobile/build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
