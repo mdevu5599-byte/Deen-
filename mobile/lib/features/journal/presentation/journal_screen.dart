@@ -33,11 +33,14 @@ class _JournalScreenState extends State<JournalScreen> {
     data['note'] = note.text;
     data['q5'] = fix.text;
     await Prefs.setJson('journal_$key', data);
+    final clientUpdatedAt = DateTime.now().millisecondsSinceEpoch;
+    await Prefs.setI('journal_updated_$key', clientUpdatedAt);
     final uid = Fb.uid;
     if (uid != null) {
       try {
         await FirebaseFirestore.instance.collection('journals').doc('${uid}_$key').set({
           'uid': uid, 'date': key, 'answers': {for (final e in data.entries) e.key: e.value},
+          'clientUpdatedAt': clientUpdatedAt,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
       } catch (_) {}
