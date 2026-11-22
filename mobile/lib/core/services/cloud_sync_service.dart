@@ -20,7 +20,79 @@ class CloudSyncService {
       '${date.month.toString().padLeft(2, '0')}-'
       '${date.day.toString().padLeft(2, '0')}';
 
+  bool _isUserScopedKey(String key) {
+    return key.startsWith('ibadah_') ||
+        key.startsWith('journal_') ||
+        key.startsWith('tasbih_') ||
+        key.startsWith('adj_') ||
+        const {
+          'lang', 'fontScale', 'method', 'madhab', 'hijriOffset',
+          'lat', 'lng', 'placeName', 'autoLocation', 'notif',
+          'quran_last', 'quran_bookmarks', 'quran_size', 'quran_en',
+          'fav_hadith', 'guest',
+        }.contains(key);
+  }
+
+  String _cachePrefix(String uid) => '__deen_user_${uid}__';
+
+  Future<void> _archiveActiveUser(String uid) async {
+    final prefix = _cachePrefix(uid);
+    for (final key in Prefs.keys().where(_isUserScopedKey).toList()) {
+      final value = Prefs.value(key);
+      if (value == null) continue;
+      await Prefs.setValue('$prefix$key', value);
+      await Prefs.remove(key);
+    }
+  }
+
+  Future<void> _restoreUser(String uid) async {
+    final prefix = _cachePrefix(uid);
+    for (final key in Prefs.keys().where((key) => key.startsWith(prefix)).toList()) {
+      final originalKey = key.substring(prefix.length);
+      final value = Prefs.value(key);
+      if (value != null) {
+        await Prefs.setValue(originalKey, value);
+      }
+      await Prefs.remove(key);
+    }
+  }
+
+  /// Detach the current local profile when the user signs out. Private local data
+  /// is preserved in a uid-scoped cache and can only be restored by that same uid.
+  Future<void> clearUserSession(String uid, {bool preserveForLater = true}) async {
+    if (Prefs.s('cloud_sync_uid') == uid) {
+      if (preserveForLater) {
+        await _archiveActiveUser(uid);
+      } else {
+        for (final key in Prefs.keys().where(_isUserScopedKey).toList()) {
+          await Prefs.remove(key);
+        }
+      }
+      await Prefs.remove('cloud_sync_uid');
+    }
+    if (!preserveForLater) {
+      final prefix = _cachePrefix(uid);
+      for (final key in Prefs.keys().where((key) => key.startsWith(prefix)).toList()) {
+        await Prefs.remove(key);
+      }
+    }
+  }
+
+  Future<void> _switchUserContext(String uid) async {
+    final previousUid = Prefs.s('cloud_sync_uid');
+    if (previousUid != null && previousUid != uid) {
+      // Never upload one person's old local journal/tracker into another account.
+      await _archiveActiveUser(previousUid);
+      await Prefs.remove('cloud_sync_uid');
+    }
+    if (Prefs.s('cloud_sync_uid') != uid) {
+      await _restoreUser(uid);
+      await Prefs.setS('cloud_sync_uid', uid);
+    }
+  }
+
   Future<void> syncUser(String uid) async {
+    await _switchUserContext(uid);
     await _syncSettings(uid);
     await _syncIbadah(uid);
     await _syncTasbih(uid);
