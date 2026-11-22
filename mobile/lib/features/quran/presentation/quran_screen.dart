@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/services/prefs.dart';
 import '../../../core/theme/app_theme.dart';
