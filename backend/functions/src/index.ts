@@ -49,7 +49,9 @@ export const setUserRole = onCall(async (req) => {
   const role = clean(req.data?.role, 20);
   if (!uid || !(ROLES as readonly string[]).includes(role)) throw new HttpsError('invalid-argument', 'Bad uid or role.');
   if (uid === actor && role !== 'super_admin') throw new HttpsError('failed-precondition', 'Cannot demote yourself.');
-  await getAuth().setCustomUserClaims(uid, {role});
+  const target = await getAuth().getUser(uid);
+  // Preserve any unrelated custom claims when changing the DEEN role.
+  await getAuth().setCustomUserClaims(uid, {...(target.customClaims ?? {}), role});
   await getAuth().revokeRefreshTokens(uid);
   if (role === 'user') {
     await db.collection('admin_users').doc(uid).delete();
@@ -58,6 +60,32 @@ export const setUserRole = onCall(async (req) => {
   }
   await audit(actor, 'setUserRole', uid, {role});
   return {ok: true};
+});
+
+/** Enable or suspend a user account. Only a super admin may change account access. */
+export const setUserDisabled = onCall(async (req) => {
+  const actor = requireSuper(req);
+  const uid = clean(req.data?.uid, 128);
+  const disabled = req.data?.disabled;
+  if (!uid || typeof disabled !== 'boolean') {
+    throw new HttpsError('invalid-argument', 'A uid and boolean disabled value are required.');
+  }
+  if (uid === actor && disabled) {
+    throw new HttpsError('failed-precondition', 'You cannot disable your own account.');
+  }
+  const target = await getAuth().getUser(uid);
+  if (target.customClaims?.role === 'super_admin' && uid !== actor) {
+    throw new HttpsError('failed-precondition', 'A super admin account cannot be disabled by another admin action.');
+  }
+  await getAuth().updateUser(uid, {disabled});
+  await db.collection('user_admin_status').doc(uid).set({
+    uid,
+    disabled,
+    updatedBy: actor,
+    updatedAt: FieldValue.serverTimestamp(),
+  }, {merge: true});
+  await audit(actor, 'setUserDisabled', uid, {disabled});
+  return {ok: true, disabled};
 });
 
 // ---------------------------------------------------------------- content
