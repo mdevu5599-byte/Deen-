@@ -23,7 +23,9 @@ class IbadahRepository extends ChangeNotifier {
   Future<void> set(DateTime d, String item, bool value) async {
     final m = forDay(d);
     m[item] = value;
-    await Prefs.setJson('ibadah_${dayKey(d)}', m);
+    final key = dayKey(d);
+    await Prefs.setJson('ibadah_$key', m);
+    await Prefs.setI('ibadah_updated_$key', DateTime.now().millisecondsSinceEpoch);
     notifyListeners();
     _sync(d, m);
   }
@@ -35,10 +37,17 @@ class IbadahRepository extends ChangeNotifier {
       final key = dayKey(d);
       final db = FirebaseFirestore.instance;
       await db.collection('ibadah_records').doc('${uid}_$key').set({
-        'uid': uid, 'date': key, 'items': m, 'updatedAt': FieldValue.serverTimestamp(),
+        'uid': uid,
+        'date': key,
+        'items': m,
+        'clientUpdatedAt': Prefs.i('ibadah_updated_$key') ?? DateTime.now().millisecondsSinceEpoch,
+        'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       await db.collection('prayer_records').doc('${uid}_$key').set({
-        'uid': uid, 'date': key, 'prayers': {for (final p in _prayers) p: m[p] ?? false},
+        'uid': uid,
+        'date': key,
+        'prayers': {for (final p in _prayers) p: m[p] ?? false},
+        'clientUpdatedAt': Prefs.i('ibadah_updated_$key') ?? DateTime.now().millisecondsSinceEpoch,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (_) {}
