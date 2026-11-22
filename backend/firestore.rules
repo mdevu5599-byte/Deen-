@@ -26,20 +26,32 @@ service cloud.firestore {
         && request.resource.data.displayName.size() <= 80;
       allow update: if (isOwner(uid) && noRoleFields()
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.accountType == resource.data.accountType
+        && (
+          request.resource.data.accountType == resource.data.get('accountType', null)
+          || (resource.data.get('accountType', null) == null
+            && request.resource.data.accountType in ['personal', 'public'])
+        )
+        && request.resource.data.displayName is string
         && request.resource.data.displayName.size() <= 80)
         || isSuperAdmin();
       allow delete: if false;   // deletion happens in the deleteMyAccount function
     }
 
+    // Keep read rules independent of request.resource (which only exists on writes).
     match /user_settings/{uid} {
-      allow read, write: if isOwner(uid) && noRoleFields();
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && noRoleFields();
+      allow delete: if isOwner(uid);
     }
     match /notification_preferences/{uid} {
-      allow read, write: if isOwner(uid) && noRoleFields();
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && noRoleFields();
+      allow delete: if isOwner(uid);
     }
     match /prayer_settings/{uid} {
-      allow read, write: if isOwner(uid) && noRoleFields();
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && noRoleFields();
+      allow delete: if isOwner(uid);
     }
 
     // Documents keyed "<uid>_<yyyy-mm-dd>" carrying a uid field.
@@ -63,7 +75,7 @@ service cloud.firestore {
       allow read: if ownsDoc();
       allow create, update: if createsOwnDoc()
         && id.matches('^' + request.auth.uid + '_[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && request.resource.data.keys().hasOnly(['uid', 'date', 'answers', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'date', 'answers', 'clientUpdatedAt', 'updatedAt'])
         && request.resource.data.answers.size() <= 20;
       allow delete: if ownsDoc();
     }
@@ -97,6 +109,11 @@ service cloud.firestore {
 
     // ---------- administration ----------
     match /admin_users/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    // Account suspension metadata is visible to admins; only trusted Functions write it.
+    match /user_admin_status/{uid} {
       allow read: if isAdmin();
       allow write: if false;
     }

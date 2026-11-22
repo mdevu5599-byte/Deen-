@@ -22,7 +22,9 @@ Future<void> main() async {
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider<SettingsController>.value(value: settings),
-      ChangeNotifierProvider<AuthController>(create: (_) => AuthController()),
+      ChangeNotifierProvider<AuthController>(
+        create: (_) => AuthController(settings: settings),
+      ),
       ChangeNotifierProvider<PrayerController>(create: (_) => PrayerController(settings)),
       ChangeNotifierProvider<IbadahRepository>(create: (_) => IbadahRepository()),
       Provider<HadithRepository>.value(value: hadith),

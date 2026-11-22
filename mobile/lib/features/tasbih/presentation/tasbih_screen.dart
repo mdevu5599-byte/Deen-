@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/cloud_sync_service.dart';
 import '../../../core/services/prefs.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/widgets.dart';
@@ -24,6 +26,20 @@ class TasbihScreen extends StatefulWidget {
 class _TasbihScreenState extends State<TasbihScreen> {
   String key = Prefs.s('tasbih_key') ?? 'subhanallah';
   String customName = Prefs.s('tasbih_custom') ?? '';
+  Timer? _syncTimer;
+
+  void _queueCloudSync() {
+    _syncTimer?.cancel();
+    _syncTimer = Timer(const Duration(seconds: 2), () {
+      CloudSyncService().pushTasbihDay(DateTime.now());
+    });
+  }
+
+  @override
+  void dispose() {
+    _syncTimer?.cancel();
+    super.dispose();
+  }
 
   String get _today => dayKey(DateTime.now());
   Map<String, dynamic> get _day => Prefs.json('tasbih_$_today') ?? {};
@@ -36,6 +52,8 @@ class _TasbihScreenState extends State<TasbihScreen> {
     final c = ((d[key] ?? 0) as int) + 1;
     d[key] = c;
     await Prefs.setJson('tasbih_$_today', d);
+    await Prefs.setI('tasbih_updated_$_today', DateTime.now().millisecondsSinceEpoch);
+    _queueCloudSync();
     if (c == target) HapticFeedback.heavyImpact();
     setState(() {});
   }
@@ -103,6 +121,8 @@ class _TasbihScreenState extends State<TasbihScreen> {
                   final d = _day;
                   d[key] = 0;
                   await Prefs.setJson('tasbih_$_today', d);
+                  await Prefs.setI('tasbih_updated_$_today', DateTime.now().millisecondsSinceEpoch);
+                  _queueCloudSync();
                   setState(() {});
                 },
                 child: Text(s.t('reset')),
@@ -137,6 +157,8 @@ class _TasbihScreenState extends State<TasbihScreen> {
     );
     if (v != null && v > 0) {
       await Prefs.setI('tasbih_target_$key', v);
+      await Prefs.setI('tasbih_updated_$_today', DateTime.now().millisecondsSinceEpoch);
+      _queueCloudSync();
       setState(() {});
     }
   }
@@ -158,6 +180,8 @@ class _TasbihScreenState extends State<TasbihScreen> {
     if (v != null) {
       await Prefs.setS('tasbih_custom', v);
       customName = v;
+      await Prefs.setI('tasbih_updated_$_today', DateTime.now().millisecondsSinceEpoch);
+      _queueCloudSync();
     }
   }
 

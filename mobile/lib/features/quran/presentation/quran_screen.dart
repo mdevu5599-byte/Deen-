@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/services/cloud_sync_service.dart';
 import '../../../core/services/prefs.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/widgets.dart';
@@ -150,7 +150,10 @@ class _SurahScreenState extends State<SurahScreen> {
           final key = '${sr['no']}:${a['n']}';
           final marked = bm.containsKey(key);
           return DeenCard(
-            onTap: () => Prefs.setJson('quran_last', {'surah': sr['no'], 'ayah': a['n']}),
+            onTap: () async {
+              await Prefs.setJson('quran_last', {'surah': sr['no'], 'ayah': a['n']});
+              await CloudSyncService().pushReadingPreferences();
+            },
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Text(s.n(key), style: const TextStyle(color: DeenColors.accent, fontWeight: FontWeight.w600)),
@@ -160,6 +163,7 @@ class _SurahScreenState extends State<SurahScreen> {
                   onPressed: () async {
                     marked ? bm.remove(key) : bm[key] = true;
                     await Prefs.setJson('quran_bookmarks', bm);
+                    await CloudSyncService().pushReadingPreferences();
                     setState(() {});
                   },
                 ),
