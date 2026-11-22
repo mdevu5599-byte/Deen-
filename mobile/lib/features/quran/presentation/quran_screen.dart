@@ -152,7 +152,7 @@ class _SurahScreenState extends State<SurahScreen> {
           return DeenCard(
             onTap: () async {
               await Prefs.setJson('quran_last', {'surah': sr['no'], 'ayah': a['n']});
-              await CloudSyncService().pushSettings();
+              await CloudSyncService().pushReadingPreferences();
             },
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
@@ -163,7 +163,7 @@ class _SurahScreenState extends State<SurahScreen> {
                   onPressed: () async {
                     marked ? bm.remove(key) : bm[key] = true;
                     await Prefs.setJson('quran_bookmarks', bm);
-                    await CloudSyncService().pushSettings();
+                    await CloudSyncService().pushReadingPreferences();
                     setState(() {});
                   },
                 ),
