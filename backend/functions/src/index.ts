@@ -228,7 +228,7 @@ export const processNotificationJobs = onSchedule('every 5 minutes', async () =>
 
 // ---------------------------------------------------------------- account deletion
 const OWNED_BY_UID_FIELD = ['prayer_records', 'ibadah_records', 'tasbih_records', 'journals'];
-const OWNED_BY_DOC_ID = ['users', 'user_settings', 'notification_preferences', 'prayer_settings'];
+const OWNED_BY_DOC_ID = ['users', 'user_settings', 'notification_preferences', 'prayer_settings', 'user_admin_status'];
 
 /** Permanently deletes the caller's Firestore data and their Auth account. */
 export const deleteMyAccount = onCall(async (req) => {
