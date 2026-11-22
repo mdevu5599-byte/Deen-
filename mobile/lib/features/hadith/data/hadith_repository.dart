@@ -57,6 +57,6 @@ class HadithRepository {
       m[id] = true;
     }
     await Prefs.setJson('fav_hadith', m);
-    await CloudSyncService().pushSettings();
+    await CloudSyncService().pushReadingPreferences();
   }
 }
