@@ -138,6 +138,7 @@ class FirebaseAuthRepository implements AuthRepository {
     await reference.set({
       'uid': user.uid,
       'email': user.email,
+      'phoneNumber': user.phoneNumber,
       'displayName': name.trim(),
       'accountType': accountType == 'public' ? 'public' : 'personal',
       'language': 'bn',
