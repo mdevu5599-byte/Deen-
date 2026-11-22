@@ -245,10 +245,11 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           child: Text(s.t('forgot_password')),
                         ),
-                        TextButton(
-                          onPressed: auth.busy ? null : switchPhoneMode,
-                          child: const Text('ফোন নম্বর দিয়ে OTP প্রবেশ'),
-                        ),
+                        if (!kIsWeb)
+                          TextButton(
+                            onPressed: auth.busy ? null : switchPhoneMode,
+                            child: const Text('ফোন নম্বর দিয়ে OTP প্রবেশ'),
+                          ),
                       ],
                       TextButton(
                         onPressed: () => setState(() => register = !register),
