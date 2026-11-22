@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import '../../../core/services/firebase_bootstrap.dart';
 import '../../../core/constants.dart';
 import '../../hadith/data/hadith_repository.dart';
 import '../../hadith/domain/hadith.dart';
@@ -27,10 +29,44 @@ class ContentRepository {
         final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
         _refl = list
             .where((j) => j['kind'] == 'original')
-            .map((j) => Reflection(j['id'], j['group'], j['category'] ?? '', j['bn'], j['lessonBn'] ?? ''))
+            .map((j) => Reflection(
+                  j['id'].toString(),
+                  j['group'].toString(),
+                  (j['category'] ?? '').toString(),
+                  j['bn'].toString(),
+                  (j['lessonBn'] ?? '').toString(),
+                ))
             .toList();
       } catch (_) {
         _refl = [];
+      }
+
+      // Show only admin-approved original reflections in the user app.
+      if (Fb.ready) {
+        try {
+          final snap = await FirebaseFirestore.instance
+              .collection('reminders')
+              .where('status', isEqualTo: 'verified')
+              .limit(500)
+              .get();
+          final merged = <String, Reflection>{for (final item in _refl!) item.id: item};
+          for (final document in snap.docs) {
+            final data = document.data();
+            if ((data['kind'] ?? 'original') != 'original') continue;
+            final text = (data['bn'] ?? '').toString().trim();
+            if (text.isEmpty) continue;
+            merged[document.id] = Reflection(
+              document.id,
+              (data['group'] ?? 'reminder').toString(),
+              (data['category'] ?? '').toString(),
+              text,
+              (data['lessonBn'] ?? '').toString(),
+            );
+          }
+          _refl = merged.values.toList();
+        } catch (_) {
+          // Bundled reflections remain available if the device is offline.
+        }
       }
     }
     return group == null ? _refl! : _refl!.where((r) => r.group == group).toList();
