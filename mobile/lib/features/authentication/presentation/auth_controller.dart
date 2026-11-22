@@ -75,6 +75,8 @@ class AuthController extends ChangeNotifier {
           return 'ইন্টারনেট সংযোগ পাওয়া যায়নি।';
         case 'too-many-requests':
           return 'অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।';
+        case 'user-disabled':
+          return 'এই অ্যাকাউন্টটি প্রশাসক সাময়িকভাবে বন্ধ রেখেছেন।';
       }
     }
     if (exception is TimeoutException) {
