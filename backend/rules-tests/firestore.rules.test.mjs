@@ -40,6 +40,11 @@ await env.withSecurityRulesDisabled(async (context) => {
     accountType: 'personal',
     language: 'bn',
   });
+  await setDoc(doc(firestore, 'users/legacy'), {
+    uid: 'legacy',
+    email: 'legacy@example.test',
+    displayName: 'Legacy user',
+  });
   await setDoc(doc(firestore, 'user_settings/alice'), {
     uid: 'alice',
     language: 'bn',
@@ -79,6 +84,18 @@ test('a user can read and update only their own settings', async () => {
     uid: 'alice',
     role: 'super_admin',
   }, {merge: true}));
+});
+
+test('a legacy profile may fill a missing account type once, but cannot later change it', async () => {
+  await assertSucceeds(setDoc(doc(env.authenticatedContext('legacy', {role: 'user'}).firestore(), 'users/legacy'), {
+    uid: 'legacy',
+    email: 'legacy@example.test',
+    displayName: 'Legacy user',
+    accountType: 'personal',
+  }, {merge: true}));
+  await assertFails(updateDoc(doc(env.authenticatedContext('legacy', {role: 'user'}).firestore(), 'users/legacy'), {
+    accountType: 'public',
+  }));
 });
 
 test('a user cannot assign themselves an admin role in their profile', async () => {
