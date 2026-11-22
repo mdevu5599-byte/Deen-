@@ -27,19 +27,27 @@ service cloud.firestore {
       allow update: if (isOwner(uid) && noRoleFields()
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.accountType == resource.data.accountType
+        && request.resource.data.displayName is string
         && request.resource.data.displayName.size() <= 80)
         || isSuperAdmin();
       allow delete: if false;   // deletion happens in the deleteMyAccount function
     }
 
+    // Keep read rules independent of request.resource (which only exists on writes).
     match /user_settings/{uid} {
-      allow read, write: if isOwner(uid) && noRoleFields();
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && noRoleFields();
+      allow delete: if isOwner(uid);
     }
     match /notification_preferences/{uid} {
-      allow read, write: if isOwner(uid) && noRoleFields();
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && noRoleFields();
+      allow delete: if isOwner(uid);
     }
     match /prayer_settings/{uid} {
-      allow read, write: if isOwner(uid) && noRoleFields();
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && noRoleFields();
+      allow delete: if isOwner(uid);
     }
 
     // Documents keyed "<uid>_<yyyy-mm-dd>" carrying a uid field.
@@ -97,6 +105,11 @@ service cloud.firestore {
 
     // ---------- administration ----------
     match /admin_users/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    // Account suspension metadata is visible to admins; only trusted Functions write it.
+    match /user_admin_status/{uid} {
       allow read: if isAdmin();
       allow write: if false;
     }
