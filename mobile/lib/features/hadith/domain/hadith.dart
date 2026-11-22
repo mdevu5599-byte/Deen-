@@ -13,6 +13,8 @@ class Hadith {
   final String? grade;
   final String lessonBn;
   final List<String> related;
+  final String refText; // full reference text, e.g. "সহীহ বুখারী: ২৪৭৫; সহীহ মুসলিম: ৫৭"
+  final String status; // verified | imported
 
   const Hadith({
     required this.id,
@@ -27,6 +29,8 @@ class Hadith {
     this.grade,
     required this.lessonBn,
     this.related = const [],
+    this.refText = '',
+    this.status = 'verified',
   });
 
   factory Hadith.fromJson(String id, Map<String, dynamic> j) => Hadith(
@@ -42,11 +46,15 @@ class Hadith {
         grade: j['grade'] as String?,
         lessonBn: (j['lessonBn'] ?? '') as String,
         related: ((j['related'] ?? const []) as List).map((e) => e.toString()).toList(),
+        refText: (j['refText'] ?? '') as String,
+        status: (j['status'] ?? 'verified') as String,
       );
 
-  String get reference => '$book, $number';
+  bool get isVerified => status == 'verified';
 
-  /// Mandatory-field gate: Arabic text, Bengali translation, book and number must exist.
-  bool get isPublishable =>
-      arabic.trim().isNotEmpty && bn.trim().isNotEmpty && book.trim().isNotEmpty && number.trim().isNotEmpty;
+  String get reference => refText.isNotEmpty ? refText : (number.isEmpty ? book : '$book, $number');
+
+  /// Display gate: a Bengali text and some source reference are required. Arabic is
+  /// optional (shown when present). Verified status is tracked separately.
+  bool get isPublishable => bn.trim().isNotEmpty && (refText.trim().isNotEmpty || book.trim().isNotEmpty);
 }

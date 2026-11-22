@@ -70,6 +70,27 @@ class _HadithScreenState extends State<HadithScreen> {
   }
 }
 
+const _pendingNotice = {
+  'bn': 'সংকলন থেকে সংযোজিত। আরবি মূল ও মান যাচাই বাকি; প্রচারের আগে আলেমের কাছে মিলিয়ে নিন।',
+  'en': 'Imported from a compilation. Arabic text and grading not yet verified; check with a scholar before sharing.',
+  'ar': 'مضاف من مجموعة. النص العربي والدرجة لم يُتحقق منهما بعد؛ راجع أحد العلماء قبل النشر.',
+};
+
+class PendingNotice extends StatelessWidget {
+  const PendingNotice({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: DeenColors.sage, borderRadius: BorderRadius.circular(10)),
+      child: Text(_pendingNotice[s.lang] ?? _pendingNotice['bn']!,
+          style: const TextStyle(fontSize: 12, color: DeenColors.warn, height: 1.6)),
+    );
+  }
+}
+
 class HadithCard extends StatelessWidget {
   final Hadith h;
   final VoidCallback? onTap;
@@ -83,6 +104,7 @@ class HadithCard extends StatelessWidget {
         Text(h.bn, style: const TextStyle(fontSize: 17, height: 1.8)),
         const SizedBox(height: 8),
         Text('${s.t('source')}: ${h.reference}', style: const TextStyle(color: DeenColors.textSecondary, fontSize: 13)),
+        if (!h.isVerified) Padding(padding: const EdgeInsets.only(top: 6), child: Text(h.category, style: const TextStyle(fontSize: 12, color: DeenColors.accent))),
       ]),
     );
   }
@@ -116,11 +138,12 @@ class _HadithDetailScreenState extends State<HadithDetailScreen> {
         ),
         IconButton(
           icon: const Icon(Icons.share_outlined),
-          onPressed: () => Share.share('${h.arabic}\n\n${h.bn}\n\n${h.reference}\n— DEEN'),
+          onPressed: () => Share.share('${h.arabic.isNotEmpty ? '${h.arabic}\n\n' : ''}${h.bn}\n\n${h.reference}\n— DEEN'),
         ),
       ]),
       body: ListView(padding: const EdgeInsets.all(20), children: [
-        ArabicText(h.arabic, size: 26),
+        if (!h.isVerified) const PendingNotice(),
+        if (h.arabic.isNotEmpty) ArabicText(h.arabic, size: 26),
         label(s.t('translation')),
         Text(h.bn, style: const TextStyle(fontSize: 18, height: 1.9)),
         if ((h.en ?? '').isNotEmpty) ...[label(s.t('english_translation')), Text(h.en!, style: const TextStyle(fontFamily: 'Inter', height: 1.7))],

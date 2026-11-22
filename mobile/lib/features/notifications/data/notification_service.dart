@@ -142,7 +142,7 @@ class NotificationService {
     final prefs = st.notif;
     final now = DateTime.now();
     final isIos = defaultTargetPlatform == TargetPlatform.iOS;
-    final horizonDays = isIos ? 4 : 7;
+    final horizonDays = isIos ? 3 : 14;
     final pending = <_Pending>[];
 
     for (int d = 0; d < horizonDays; d++) {
@@ -157,7 +157,7 @@ class NotificationService {
         final t = times[id]!;
         String body = prayerBody(st.lang);
         // Attach a verified hadith on prayer importance only when one exists.
-        final h = await content.hadithFor(date, category: 'নামাজের গুরুত্ব');
+        final h = await content.hadithFor(date, category: 'নামাজের গুরুত্ব', forNotification: true);
         if (h != null) body = '$body\n${h.bn} (${h.reference})';
         if (t.isAfter(now)) pending.add(_Pending(t, id, prayerTitle(st.lang, id), body, true, cfg));
         if (cfg.early > 0) {
@@ -181,12 +181,25 @@ class NotificationService {
         if (body == null) continue;
         dayContent.add(_Pending(at, entry.key, _t(entry.key, st.lang), body, false, null));
       }
+      final dr = prefs.death;
+      if (dr.enabled && dr.everyHours > 0) {
+        final slots = <int>[for (int h = dr.startHour; h <= dr.endHour; h += dr.everyHours) h];
+        final epochDay = DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch ~/ 86400000;
+        for (int i = 0; i < slots.length; i++) {
+          final at = DateTime(date.year, date.month, date.day, slots[i]);
+          if (!at.isAfter(now)) continue;
+          if (prefs.inQuietHours(at.hour * 60)) continue;
+          final body = await _deathBody(epochDay * slots.length + i, content);
+          if (body == null) continue;
+          dayContent.add(_Pending(at, 'death', _deathTitle(st.lang), body, false, null));
+        }
+      }
       dayContent.sort((a, b) => a.at.compareTo(b.at));
       pending.addAll(dayContent.take(prefs.dailyLimit));
     }
 
     pending.sort((a, b) => a.at.compareTo(b.at));
-    final capped = isIos ? pending.take(60).toList() : pending;
+    final capped = isIos ? pending.take(60).toList() : pending.take(450).toList();
     final mode = (await canScheduleExact())
         ? AndroidScheduleMode.exactAllowWhileIdle
         : AndroidScheduleMode.inexactAllowWhileIdle;
@@ -206,10 +219,20 @@ class NotificationService {
     return capped.length;
   }
 
+  static String _deathTitle(String lang) =>
+      lang == 'en' ? 'Remember death' : lang == 'ar' ? 'اذكر الموت' : 'মৃত্যুকে স্মরণ করুন';
+
+  static Future<String?> _deathBody(int seq, ContentRepository c) async {
+    final h = await c.deathHadithAt(seq);
+    if (h != null) return '${h.bn}\n(${h.reference})';
+    final l = await c.reflections('akhirah'); // fallback: original reflections
+    return l.isEmpty ? null : l[seq % l.length].bn;
+  }
+
   static Future<String?> _contentBody(String key, DateTime date, ContentRepository c, String lang) async {
     switch (key) {
       case 'hadith':
-        final h = await c.hadithFor(date);
+        final h = await c.hadithFor(date, forNotification: true);
         if (h == null) return null; // never send unverified / missing Hadith
         return '${h.bn}\n(${h.reference})';
       case 'akhirah':

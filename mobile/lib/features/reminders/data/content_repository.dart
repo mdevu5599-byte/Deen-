@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import '../../../core/constants.dart';
 import '../../hadith/data/hadith_repository.dart';
 import '../../hadith/domain/hadith.dart';
 
@@ -49,8 +50,29 @@ class ContentRepository {
     return l[rotate(date, group.hashCode.abs() % 97, l.length)];
   }
 
-  Future<Hadith?> hadithFor(DateTime date, {String? category}) async {
-    final l = await hadith.byCategory(category);
+  /// Round-robin over death/akhirah/mercy categories so consecutive notifications
+  /// alternate themes and a hadith is not repeated until the whole set was shown.
+  Future<Hadith?> deathHadithAt(int seq) async {
+    final lists = <List<Hadith>>[];
+    for (final c in kDeathHadithCategories) {
+      var l = await hadith.byCategory(c);
+      if (!kNotifyImportedHadith) l = l.where((h) => h.isVerified).toList();
+      if (l.isNotEmpty) lists.add(l);
+    }
+    if (lists.isEmpty) return null;
+    final mixed = <Hadith>[];
+    final longest = lists.map((l) => l.length).reduce((a, b) => a > b ? a : b);
+    for (int i = 0; i < longest; i++) {
+      for (final l in lists) {
+        if (i < l.length) mixed.add(l[i]);
+      }
+    }
+    return mixed[seq % mixed.length];
+  }
+
+  Future<Hadith?> hadithFor(DateTime date, {String? category, bool forNotification = false}) async {
+    var l = await hadith.byCategory(category);
+    if (forNotification && !kNotifyImportedHadith) l = l.where((h) => h.isVerified).toList();
     if (l.isEmpty) return null;
     return l[rotate(date, (category ?? 'all').hashCode.abs() % 89, l.length)];
   }

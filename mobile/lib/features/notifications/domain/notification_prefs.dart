@@ -25,6 +25,20 @@ class ContentNotif {
       ContentNotif(enabled: j['e'] ?? true, hour: j['h'] ?? 9, minute: j['m'] ?? 0, anchor: j['a']);
 }
 
+/// Periodic "remember death" hadith notifications: every [everyHours] hours between
+/// [startHour] and [endHour] (inclusive), rotating through death/akhirah hadith.
+class DeathPrefs {
+  bool enabled;
+  int everyHours; // 1, 2, 3, 4, 6
+  int startHour;
+  int endHour;
+  DeathPrefs({this.enabled = true, this.everyHours = 3, this.startHour = 8, this.endHour = 21});
+
+  Map<String, dynamic> toJson() => {'e': enabled, 'h': everyHours, 's': startHour, 'x': endHour};
+  factory DeathPrefs.fromJson(Map<String, dynamic> j) => DeathPrefs(
+      enabled: j['e'] ?? true, everyHours: j['h'] ?? 3, startHour: j['s'] ?? 8, endHour: j['x'] ?? 21);
+}
+
 class NotificationPrefs {
   final Map<String, PrayerNotif> prayers;
   final Map<String, ContentNotif> content;
@@ -32,6 +46,7 @@ class NotificationPrefs {
   int quietStart; // minutes from midnight
   int quietEnd;
   int dailyLimit;
+  DeathPrefs death;
 
   NotificationPrefs({
     Map<String, PrayerNotif>? prayers,
@@ -39,8 +54,10 @@ class NotificationPrefs {
     this.quietEnabled = false,
     this.quietStart = 23 * 60,
     this.quietEnd = 4 * 60,
-    this.dailyLimit = 8,
-  })  : prayers = prayers ?? {for (final p in prayerIds) p: PrayerNotif()},
+    this.dailyLimit = 20,
+    DeathPrefs? death,
+  })  : death = death ?? DeathPrefs(),
+         prayers = prayers ?? {for (final p in prayerIds) p: PrayerNotif()},
         content = content ??
             {
               'hadith': ContentNotif(hour: 10, minute: 0),
@@ -60,6 +77,7 @@ class NotificationPrefs {
         'qs': quietStart,
         'qend': quietEnd,
         'limit': dailyLimit,
+        'death': death.toJson(),
       };
 
   factory NotificationPrefs.fromJson(Map<String, dynamic>? j) {
@@ -80,7 +98,8 @@ class NotificationPrefs {
     d.quietEnabled = j['qe'] ?? false;
     d.quietStart = j['qs'] ?? d.quietStart;
     d.quietEnd = j['qend'] ?? d.quietEnd;
-    d.dailyLimit = j['limit'] ?? 8;
+    d.dailyLimit = j['limit'] ?? 20;
+    if (j['death'] is Map) d.death = DeathPrefs.fromJson((j['death'] as Map).cast<String, dynamic>());
     return d;
   }
 

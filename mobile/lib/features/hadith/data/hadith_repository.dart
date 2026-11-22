@@ -17,7 +17,7 @@ class HadithRepository {
       final raw = await rootBundle.loadString('assets/data/hadith.json');
       final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
       for (final j in list) {
-        if (j['status'] != 'verified') continue;
+        if (j['status'] != 'verified' && j['status'] != 'imported') continue;
         final h = Hadith.fromJson(j['id'].toString(), j);
         if (h.isPublishable) out[h.id] = h;
       }

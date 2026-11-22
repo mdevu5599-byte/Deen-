@@ -9,6 +9,16 @@ import '../../settings/presentation/settings_controller.dart';
 import '../data/notification_service.dart';
 import '../domain/notification_prefs.dart';
 
+const _dTitle = {'bn': 'মৃত্যুর স্মরণ (হাদিস)', 'en': 'Remember death (Hadith)', 'ar': 'تذكّر الموت (حديث)'};
+const _dSub = {
+  'bn': 'নির্দিষ্ট সময় পর পর মৃত্যু, কবর ও আখিরাতের হাদিস নোটিফিকেশনে পাঠান',
+  'en': 'Send a Hadith about death, the grave and the Hereafter at regular intervals',
+  'ar': 'إرسال حديث عن الموت والقبر والآخرة على فترات منتظمة',
+};
+const _dEvery = {'bn': 'প্রতি কত ঘণ্টা পর পর', 'en': 'Every (hours)', 'ar': 'كل (ساعات)'};
+const _dFrom = {'bn': 'শুরুর সময়', 'en': 'From', 'ar': 'من'};
+const _dTo = {'bn': 'শেষ সময়', 'en': 'Until', 'ar': 'إلى'};
+
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
   @override
@@ -143,6 +153,57 @@ class _State extends State<NotificationSettingsScreen> {
               ],
             ]),
           ),
+        SectionTitle(_dTitle[s.lang] ?? _dTitle['bn']!),
+        DeenCard(
+          child: Column(children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(_dSub[s.lang] ?? _dSub['bn']!, style: const TextStyle(height: 1.5)),
+              value: n.death.enabled,
+              onChanged: (v) {
+                n.death.enabled = v;
+                _apply(st);
+              },
+            ),
+            if (n.death.enabled) ...[
+              Row(children: [
+                Expanded(child: Text(_dEvery[s.lang] ?? _dEvery['bn']!)),
+                DropdownButton<int>(
+                  value: n.death.everyHours,
+                  items: [for (final h in const [1, 2, 3, 4, 6]) DropdownMenuItem(value: h, child: Text(s.n(h)))],
+                  onChanged: (v) {
+                    n.death.everyHours = v ?? 3;
+                    _apply(st);
+                  },
+                ),
+              ]),
+              Row(children: [
+                Expanded(child: Text(_dFrom[s.lang] ?? _dFrom['bn']!)),
+                DropdownButton<int>(
+                  value: n.death.startHour,
+                  items: [for (int h = 0; h < 24; h++) DropdownMenuItem(value: h, child: Text('${s.n(h.toString().padLeft(2, '0'))}:${s.n('00')}'))],
+                  onChanged: (v) {
+                    n.death.startHour = v ?? 8;
+                    if (n.death.endHour < n.death.startHour) n.death.endHour = n.death.startHour;
+                    _apply(st);
+                  },
+                ),
+              ]),
+              Row(children: [
+                Expanded(child: Text(_dTo[s.lang] ?? _dTo['bn']!)),
+                DropdownButton<int>(
+                  value: n.death.endHour,
+                  items: [for (int h = 0; h < 24; h++) DropdownMenuItem(value: h, child: Text('${s.n(h.toString().padLeft(2, '0'))}:${s.n('00')}'))],
+                  onChanged: (v) {
+                    n.death.endHour = v ?? 21;
+                    if (n.death.startHour > n.death.endHour) n.death.startHour = n.death.endHour;
+                    _apply(st);
+                  },
+                ),
+              ]),
+            ],
+          ]),
+        ),
         SectionTitle(s.t('daily_reminder')),
         for (final k in n.content.keys)
           DeenCard(
@@ -218,7 +279,7 @@ class _State extends State<NotificationSettingsScreen> {
               Expanded(child: Text(s.t('daily_limit'))),
               DropdownButton<int>(
                 value: n.dailyLimit,
-                items: [for (final v in const [2, 4, 6, 8, 12]) DropdownMenuItem(value: v, child: Text(s.n(v)))],
+                items: [for (final v in const [4, 8, 12, 20, 30]) DropdownMenuItem(value: v, child: Text(s.n(v)))],
                 onChanged: (v) {
                   n.dailyLimit = v ?? 8;
                   _apply(st);
