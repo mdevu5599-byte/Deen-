@@ -37,13 +37,13 @@ settings_path = os.path.join(ANDROID, "settings.gradle")
 if os.path.exists(settings_path):
     settings = open(settings_path, encoding="utf-8").read()
     settings = re.sub(
-        r'(id\\s+["\']com\\.android\\.application["\']\\s+version\\s+["\'])[^"\']+',
-        r'\\g<1>8.6.1',
+        r'(id\s+["\']com\.android\.application["\']\s+version\s+["\'])[^"\']+',
+        r'\g<1>8.6.1',
         settings,
     )
     settings = re.sub(
-        r'(id\\s+["\']org\\.jetbrains\\.kotlin\\.android["\']\\s+version\\s+["\'])[^"\']+',
-        r'\\g<1>2.0.20',
+        r'(id\s+["\']org\.jetbrains\.kotlin\.android["\']\s+version\s+["\'])[^"\']+',
+        r'\g<1>2.0.20',
         settings,
     )
     open(settings_path, "w", encoding="utf-8").write(settings)
@@ -52,18 +52,18 @@ root_gradle_path = os.path.join(ANDROID, "build.gradle")
 if os.path.exists(root_gradle_path):
     root_gradle = open(root_gradle_path, encoding="utf-8").read()
     root_gradle = re.sub(
-        r"(com\\.android\\.tools\\.build:gradle:)[0-9.]+",
-        r"\\g<1>8.6.1",
+        r"(com\.android\.tools\.build:gradle:)[0-9.]+",
+        r"\g<1>8.6.1",
         root_gradle,
     )
     root_gradle = re.sub(
-        r"(ext\\.kotlin_version\\s*=\\s*['\"])[^'\"]+",
-        r"\\g<1>2.0.20",
+        r"(ext\.kotlin_version\s*=\s*['\"])[^'\"]+",
+        r"\g<1>2.0.20",
         root_gradle,
     )
     root_gradle = re.sub(
-        r"(org\\.jetbrains\\.kotlin:kotlin-gradle-plugin:)[0-9.]+",
-        r"\\g<1>2.0.20",
+        r"(org\.jetbrains\.kotlin:kotlin-gradle-plugin:)[0-9.]+",
+        r"\g<1>2.0.20",
         root_gradle,
     )
     open(root_gradle_path, "w", encoding="utf-8").write(root_gradle)
@@ -72,12 +72,11 @@ wrapper_path = os.path.join(ANDROID, "gradle/wrapper/gradle-wrapper.properties")
 if os.path.exists(wrapper_path):
     wrapper = open(wrapper_path, encoding="utf-8").read()
     wrapper = re.sub(
-        r"(distributionUrl=.*gradle-)[0-9.]+(-all\\.zip)",
-        r"\\g<1>8.7\\g<2>",
+        r"(distributionUrl=.*gradle-)[0-9.]+(-all\.zip)",
+        r"\g<1>8.7\g<2>",
         wrapper,
     )
     open(wrapper_path, "w", encoding="utf-8").write(wrapper)
-
 receivers = """
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
