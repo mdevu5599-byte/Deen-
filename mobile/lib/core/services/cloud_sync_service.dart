@@ -60,7 +60,11 @@ class CloudSyncService {
   /// Detach the current local profile when the user signs out. Private local data
   /// is preserved in a uid-scoped cache and can only be restored by that same uid.
   Future<void> clearUserSession(String uid, {bool preserveForLater = true}) async {
-    if (Prefs.s('cloud_sync_uid') == uid) {
+    final activeUid = Prefs.s('cloud_sync_uid');
+    // Also cover the short interval immediately after authentication, before the
+    // first sync has stored cloud_sync_uid. In that case the local values belong
+    // to the just-authenticated account (or are the guest data being adopted).
+    if (activeUid == uid || activeUid == null) {
       if (preserveForLater) {
         await _archiveActiveUser(uid);
       } else {
