@@ -1,0 +1,7 @@
+{
+  "FIREBASE_API_KEY": "replace_with_web_api_key",
+  "FIREBASE_APP_ID": "replace_with_web_app_id",
+  "FIREBASE_MESSAGING_SENDER_ID": "716894720391",
+  "FIREBASE_PROJECT_ID": "deen-b7d89",
+  "FIREBASE_AUTH_DOMAIN": "replace_with_web_auth_domain"
+}
