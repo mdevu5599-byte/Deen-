@@ -133,7 +133,28 @@ class FirebaseAuthRepository implements AuthRepository {
   }) async {
     final reference = _db.collection('users').doc(user.uid);
     final snapshot = await reference.get();
-    if (snapshot.exists) return;
+    if (snapshot.exists) {
+      // Complete profiles created by older app versions without changing user/admin roles.
+      final current = snapshot.data() ?? <String, dynamic>{};
+      final patch = <String, dynamic>{};
+      if (current['uid'] == null) patch['uid'] = user.uid;
+      if (current['email'] == null && user.email != null) patch['email'] = user.email;
+      if (current['phoneNumber'] == null && user.phoneNumber != null) {
+        patch['phoneNumber'] = user.phoneNumber;
+      }
+      if ((current['displayName'] ?? '').toString().isEmpty && name.trim().isNotEmpty) {
+        patch['displayName'] = name.trim();
+      }
+      if (!['personal', 'public'].contains(current['accountType'])) {
+        patch['accountType'] = accountType == 'public' ? 'public' : 'personal';
+      }
+      if (current['language'] == null) patch['language'] = 'bn';
+      if (patch.isNotEmpty) {
+        patch['updatedAt'] = FieldValue.serverTimestamp();
+        await reference.update(patch);
+      }
+      return;
+    }
 
     await reference.set({
       'uid': user.uid,
