@@ -7,7 +7,7 @@ import {auth, isConfigured} from '@/lib/firebase';
 
 const NAV: [string, string][] = [
   ['/', 'Overview'], ['/users', 'Users & roles'], ['/hadith', 'Hadith'], ['/reminders', 'Reminders'],
-  ['/categories', 'Categories'], ['/quran', 'Quran content'], ['/notifications', 'Notifications'],
+  ['/categories', 'Categories'], ['/quran', 'Quran content'], ['/duas', 'Duas'], ['/notifications', 'Notifications'],
   ['/audit', 'Audit logs'], ['/settings', 'Global settings'],
 ];
 
@@ -26,10 +26,16 @@ export default function Shell({children}: {children: React.ReactNode}) {
     return onAuthStateChanged(auth(), async (u) => {
       if (!u) { setState('out'); return; }
       // Role comes from the signed ID token claims (set only by the setUserRole function).
-      const t = await u.getIdTokenResult(true);
-      const r = ((t.claims.role as Role) || 'user');
-      setRole(r);
-      setState(r === 'admin' || r === 'super_admin' ? 'in' : 'denied');
+      try {
+        const t = await u.getIdTokenResult(true);
+        const r = ((t.claims.role as Role) || 'user');
+        setRole(r);
+        setState(r === 'admin' || r === 'super_admin' ? 'in' : 'denied');
+      } catch {
+        await signOut(auth());
+        setErr('Could not verify your administrator permissions. Please sign in again.');
+        setState('out');
+      }
     });
   }, []);
 
