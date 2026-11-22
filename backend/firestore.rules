@@ -26,7 +26,11 @@ service cloud.firestore {
         && request.resource.data.displayName.size() <= 80;
       allow update: if (isOwner(uid) && noRoleFields()
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.accountType == resource.data.accountType
+        && (
+          request.resource.data.accountType == resource.data.get('accountType', null)
+          || (resource.data.get('accountType', null) == null
+            && request.resource.data.accountType in ['personal', 'public'])
+        )
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() <= 80)
         || isSuperAdmin();
