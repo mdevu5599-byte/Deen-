@@ -20,6 +20,7 @@ on:
       - 'backend/functions/**'
       - 'backend/firestore.rules'
       - 'backend/storage.rules'
+      - 'backend/rules-tests/**'
       - 'scripts/**'
       - '.github/workflows/build.yml'
 
