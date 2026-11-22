@@ -15,6 +15,10 @@ on:
     branches: [main]
     paths:
       - 'mobile/**'
+      - 'admin/**'
+      - 'backend/functions/**'
+      - 'backend/firestore.rules'
+      - 'backend/storage.rules'
       - 'scripts/**'
       - '.github/workflows/build.yml'
 
