@@ -1,0 +1,5 @@
+# Local Firebase configuration and credentials
+admin/.env.local
+admin/.env.*.local
+mobile/firebase.web.json
+mobile/android/app/google-services.json
