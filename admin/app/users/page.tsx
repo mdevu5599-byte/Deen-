@@ -1,6 +1,6 @@
 'use client';
 import {useState} from 'react';
-import {call} from '@/lib/firebase';
+import {auth, call} from '@/lib/firebase';
 import {fmt, useDocs} from '@/lib/hooks';
 import {useRole} from '@/components/Shell';
 
@@ -9,6 +9,7 @@ export default function Users() {
   const admins = useDocs('admin_users');
   const statusDocs = useDocs('user_admin_status');
   const role = useRole();
+  const currentUid = auth().currentUser?.uid;
   const [msg, setMsg] = useState('');
   const roleOf = (uid: string) => admins.docs.find((a) => a.id === uid)?.role ?? 'user';
   const disabledOf = (uid: string) => statusDocs.docs.find((a) => a.id === uid)?.disabled === true;
@@ -56,7 +57,7 @@ export default function Users() {
                     <button
                       className={disabledOf(u.id) ? 'sec' : 'bad'}
                       style={{marginTop: 6}}
-                      disabled={u.id === (typeof window !== 'undefined' ? '' : '')}
+                      disabled={u.id === currentUid}
                       onClick={() => setDisabled(u.id, !disabledOf(u.id))}
                     >
                       {disabledOf(u.id) ? 'Enable' : 'Disable'}
