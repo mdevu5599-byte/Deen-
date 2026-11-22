@@ -3,7 +3,7 @@
   "storage": {"rules": "storage.rules"},
   "functions": [{"source": "functions", "codebase": "default", "runtime": "nodejs20"}],
   "hosting": [
-    {"target": "admin", "public": "../apps/admin/out", "ignore": ["firebase.json", "**/.*"]},
-    {"target": "web", "public": "../apps/mobile/build/web", "ignore": ["firebase.json", "**/.*"], "rewrites": [{"source": "**", "destination": "/index.html"}]}
+    {"target": "admin", "public": "../admin/out", "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]},
+    {"target": "web", "public": "../mobile/build/web", "ignore": ["firebase.json", "**/.*", "**/node_modules/**"], "rewrites": [{"source": "**", "destination": "/index.html"}]}
   ]
 }
