@@ -142,8 +142,8 @@ class FirebaseAuthRepository implements AuthRepository {
       if (current['phoneNumber'] == null && user.phoneNumber != null) {
         patch['phoneNumber'] = user.phoneNumber;
       }
-      if ((current['displayName'] ?? '').toString().isEmpty && name.trim().isNotEmpty) {
-        patch['displayName'] = name.trim();
+      if ((current['displayName'] ?? '').toString().trim().isEmpty) {
+        patch['displayName'] = name.trim().isNotEmpty ? name.trim() : 'DEEN user';
       }
       if (!['personal', 'public'].contains(current['accountType'])) {
         patch['accountType'] = accountType == 'public' ? 'public' : 'personal';
