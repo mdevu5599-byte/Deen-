@@ -31,7 +31,8 @@ const admin = env.authenticatedContext('admin-user', {role: 'admin'}).firestore(
 const superAdmin = env.authenticatedContext('root-user', {role: 'super_admin'}).firestore();
 const guest = env.unauthenticatedContext().firestore();
 
-await env.withSecurityRulesDisabled(async ({firestore}) => {
+await env.withSecurityRulesDisabled(async (context) => {
+  const firestore = context.firestore();
   await setDoc(doc(firestore, 'users/alice'), {
     uid: 'alice',
     email: 'alice@example.test',
