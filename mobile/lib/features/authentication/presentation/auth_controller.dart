@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuthException;
 import 'package:flutter/foundation.dart';
 
+import '../../../core/services/cloud_sync_service.dart';
 import '../../../core/services/firebase_bootstrap.dart';
+import '../../settings/presentation/settings_controller.dart';
 import '../../notifications/data/push_service.dart';
 import '../data/firebase_auth_repository.dart';
 import '../domain/auth_repository.dart';
@@ -17,8 +19,9 @@ class AuthController extends ChangeNotifier {
   String? phoneVerificationId;
   bool phoneCodeSent = false;
   StreamSubscription<AppUser?>? _sub;
+  final SettingsController? settings;
 
-  AuthController() {
+  AuthController({this.settings}) {
     if (Fb.ready) {
       _repo = FirebaseAuthRepository();
       user = _repo!.current;
@@ -30,11 +33,17 @@ class AuthController extends ChangeNotifier {
           role = 'user';
         }
         if (currentUser != null) {
-          unawaited(PushService.sync(currentUser.uid));
+          unawaited(_syncSignedInUser(currentUser.uid));
         }
         notifyListeners();
       });
     }
+  }
+
+  Future<void> _syncSignedInUser(String uid) async {
+    await CloudSyncService().syncUser(uid);
+    settings?.reloadFromPrefs();
+    await PushService.sync(uid);
   }
 
   bool get available => _repo != null;
