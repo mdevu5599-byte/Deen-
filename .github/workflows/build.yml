@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - 'mobile/**'
+      - 'admin/**'
+      - 'backend/functions/**'
+      - 'backend/firestore.rules'
+      - 'backend/storage.rules'
       - 'scripts/**'
       - '.github/workflows/build.yml'
   pull_request:
@@ -78,3 +82,33 @@ jobs:
             mobile/build/app/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
+
+  admin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  functions:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/functions/package-lock.json
+      - run: npm ci
+      - run: npm run build
