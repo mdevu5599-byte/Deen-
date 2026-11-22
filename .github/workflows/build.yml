@@ -21,6 +21,16 @@ jobs:
           cache: true
       - name: Generate platform folders
         run: flutter create --platforms=android --org com.deen --project-name deen . && rm -f test/widget_test.dart
+      - name: Write Firebase Android configuration
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::Repository secret GOOGLE_SERVICES_JSON is not set."
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          python3 -m json.tool android/app/google-services.json > /dev/null
       - name: Patch Android config
         run: python3 ../scripts/patch_android.py
       - run: flutter pub get
