@@ -16,6 +16,15 @@ class Prefs {
   static Future<void> setB(String k, bool v) => _p.setBool(k, v);
   static Future<void> remove(String k) => _p.remove(k);
   static Set<String> keys() => _p.getKeys();
+  static Object? value(String k) => _p.get(k);
+
+  static Future<bool> setValue(String key, Object value) {
+    if (value is String) return _p.setString(key, value);
+    if (value is int) return _p.setInt(key, value);
+    if (value is double) return _p.setDouble(key, value);
+    if (value is bool) return _p.setBool(key, value);
+    throw ArgumentError.value(value, 'value', 'Unsupported SharedPreferences value type');
+  }
 
   static Map<String, dynamic>? json(String k) {
     final v = _p.getString(k);
