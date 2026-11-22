@@ -50,20 +50,32 @@ if not os.path.exists(gradle_path):
     sys.exit("android/app/build.gradle not found; adjust the script for the generated Gradle DSL.")
 
 gradle = open(gradle_path, encoding="utf-8").read()
-gradle = re.sub(r"minSdk\\s*=?\\s*flutter\\.minSdkVersion", "minSdk = 23", gradle)
-gradle = re.sub(r"compileSdk\\s*=?\\s*flutter\\.compileSdkVersion", "compileSdk = 35", gradle)
+gradle = re.sub(r"minSdk\s*=?\s*flutter\.minSdkVersion", "minSdk = 23", gradle)
+gradle = re.sub(r"compileSdk\s*=?\s*flutter\.compileSdkVersion", "compileSdk = 35", gradle)
 
 if "coreLibraryDesugaringEnabled" not in gradle:
-    gradle = re.sub(r"compileOptions\\s*\\{", "compileOptions {\\n        coreLibraryDesugaringEnabled true", gradle, count=1)
-    gradle += "\\ndependencies {\\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\\n}\\n"
+    if "compileOptions {" not in gradle:
+        sys.exit("compileOptions block not found in generated Gradle file.")
+    gradle = re.sub(
+        r"compileOptions\s*\{",
+        "compileOptions {\n        coreLibraryDesugaringEnabled true",
+        gradle,
+        count=1,
+    )
+    gradle += "\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n"
 
 if os.path.exists(os.path.join(ANDROID, "app/google-services.json")) and "com.google.gms.google-services" not in gradle:
-    gradle = re.sub(r"plugins\\s*\\{", 'plugins {\\n    id "com.google.gms.google-services"', gradle, count=1)
+    gradle = re.sub(
+        r"plugins\s*\{",
+        'plugins {\n    id "com.google.gms.google-services"',
+        gradle,
+        count=1,
+    )
     settings_path = os.path.join(ANDROID, "settings.gradle")
     settings = open(settings_path, encoding="utf-8").read()
     settings = re.sub(
-        r"plugins\\s*\\{",
-        'plugins {\\n    id "com.google.gms.google-services" version "4.4.2" apply false',
+        r"plugins\s*\{",
+        'plugins {\n    id "com.google.gms.google-services" version "4.4.2" apply false',
         settings,
         count=1,
     )
@@ -84,10 +96,35 @@ if os.path.exists(key_properties) and "signingConfigs.release" not in gradle:
         }
     }
 """
-    gradle = re.sub(r"\\n?\\s*buildTypes\\s*\\{", signing_block + "\\n    buildTypes {", gradle, count=1)
-    gradle = gradle.replace("signingConfig = signingConfigs.debug", "signingConfig = signingConfigs.release")
-    if "signingConfigs.release" not in gradle:
-        sys.exit("Could not wire release signing config; inspect generated android/app/build.gradle.")
+    if not re.search(r"\n\s*buildTypes\s*\{", gradle):
+        sys.exit("buildTypes block not found in generated Gradle file.")
+    gradle = re.sub(
+        r"\n\s*buildTypes\s*\{",
+        "\n" + signing_block + "\n    buildTypes {",
+        gradle,
+        count=1,
+    )
+    if "signingConfig = signingConfigs.debug" in gradle:
+        gradle = gradle.replace(
+            "signingConfig = signingConfigs.debug",
+            "signingConfig = signingConfigs.release",
+            1,
+        )
+    elif "signingConfig signingConfigs.debug" in gradle:
+        gradle = gradle.replace(
+            "signingConfig signingConfigs.debug",
+            "signingConfig signingConfigs.release",
+            1,
+        )
+    else:
+        if "release {" not in gradle:
+            sys.exit("Release buildType not found; inspect generated android/app/build.gradle.")
+        gradle = re.sub(
+            r"(buildTypes\s*\{\s*release\s*\{)",
+            r"\1\n            signingConfig = signingConfigs.release",
+            gradle,
+            count=1,
+        )
 
 open(gradle_path, "w", encoding="utf-8").write(gradle)
 print("Android configuration patched.")
