@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import '../../../core/services/cloud_sync_service.dart';
 import '../../../core/services/firebase_bootstrap.dart';
 import '../../../core/services/prefs.dart';
 import '../domain/hadith.dart';
@@ -56,5 +57,6 @@ class HadithRepository {
       m[id] = true;
     }
     await Prefs.setJson('fav_hadith', m);
+    await CloudSyncService().pushSettings();
   }
 }
