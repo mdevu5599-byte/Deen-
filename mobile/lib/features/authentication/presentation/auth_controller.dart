@@ -150,6 +150,10 @@ class AuthController extends ChangeNotifier {
   Future<bool> reset(String email) => _run(() => _repo!.sendPasswordReset(email));
 
   Future<void> signOut() async {
+    final uid = user?.uid;
+    if (uid != null) {
+      await CloudSyncService().clearUserSession(uid, preserveForLater: true);
+    }
     await _repo?.signOut();
     user = null;
     role = 'user';
@@ -159,8 +163,14 @@ class AuthController extends ChangeNotifier {
   Future<bool> updateName(String name) => _run(() => _repo!.updateName(name));
 
   Future<bool> deleteAccount() async {
+    final uid = user?.uid;
     final success = await _run(() => _repo!.deleteAccount());
-    if (success) user = null;
+    if (success) {
+      if (uid != null) {
+        await CloudSyncService().clearUserSession(uid, preserveForLater: false);
+      }
+      user = null;
+    }
     notifyListeners();
     return success;
   }
