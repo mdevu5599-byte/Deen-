@@ -31,12 +31,10 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.27.4'
@@ -50,9 +48,6 @@ jobs:
         if: ${{ env.GOOGLE_SERVICES_JSON != '' }}
         run: printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
 
-      - name: Patch Android config
-        run: python3 ../scripts/patch_android.py
-
       - name: Configure upload signing key (optional)
         if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
         run: |
@@ -63,6 +58,9 @@ jobs:
           keyAlias=$KEY_ALIAS
           storeFile=$RUNNER_TEMP/deen-upload-key.jks
           PROPS
+
+      - name: Patch Android config
+        run: python3 ../scripts/patch_android.py
 
       - run: flutter pub get
       - run: flutter analyze
