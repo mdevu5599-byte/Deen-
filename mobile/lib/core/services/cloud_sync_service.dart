@@ -35,6 +35,20 @@ class CloudSyncService {
     } catch (_) {}
   }
 
+  Future<void> pushReadingPreferences() async {
+    final uid = Fb.uid;
+    if (uid == null) return;
+    try {
+      await _db.collection('user_settings').doc(uid).set({
+        'uid': uid,
+        'quranLast': Prefs.json('quran_last') ?? {},
+        'quranBookmarks': Prefs.json('quran_bookmarks') ?? {},
+        'hadithFavourites': Prefs.json('fav_hadith') ?? {},
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (_) {}
+  }
+
   Future<void> _syncSettings(String uid) async {
     try {
       final refs = await Future.wait([
