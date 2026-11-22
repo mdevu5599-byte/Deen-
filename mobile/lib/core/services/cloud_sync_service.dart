@@ -48,6 +48,16 @@ class CloudSyncService {
         if (user['fontScale'] is num) {
           await Prefs.setD('fontScale', (user['fontScale'] as num).toDouble());
         }
+        for (final entry in const {
+          'quranLast': 'quran_last',
+          'quranBookmarks': 'quran_bookmarks',
+          'hadithFavourites': 'fav_hadith',
+        }.entries) {
+          final value = user[entry.key];
+          if (value is Map) {
+            await Prefs.setJson(entry.value, Map<String, dynamic>.from(value));
+          }
+        }
       }
       final prayer = refs[1].data();
       if (prayer != null) {
@@ -88,6 +98,9 @@ class CloudSyncService {
       'uid': uid,
       'language': Prefs.s('lang') ?? 'bn',
       'fontScale': Prefs.d('fontScale') ?? 1.0,
+      'quranLast': Prefs.json('quran_last') ?? {},
+      'quranBookmarks': Prefs.json('quran_bookmarks') ?? {},
+      'hadithFavourites': Prefs.json('fav_hadith') ?? {},
       'updatedAt': FieldValue.serverTimestamp(),
     };
     final prayer = {
@@ -230,6 +243,20 @@ class CloudSyncService {
         final remoteVersion = _version(data['clientUpdatedAt']);
 
         if (local != null && localVersion > remoteVersion) {
+          await pushTasbihDay(DateTime.parse(date));
+        } else if (local != null && localVersion == 0 && remoteVersion == 0) {
+          // Preserve legacy counters from both the phone and an older cloud document.
+          final remote = Map<String, dynamic>.from(remoteCounts);
+          final merged = <String, dynamic>{
+            for (final key in {...remote.keys, ...local.keys})
+              key: ((remote[key] is num ? remote[key] as num : 0).toInt() >
+                      (local[key] is num ? local[key] as num : 0).toInt())
+                  ? (remote[key] as num).toInt()
+                  : (local[key] as num? ?? 0).toInt(),
+          };
+          final version = DateTime.now().millisecondsSinceEpoch;
+          await Prefs.setJson('tasbih_$date', merged);
+          await Prefs.setI('tasbih_updated_$date', version);
           await pushTasbihDay(DateTime.parse(date));
         } else {
           await Prefs.setJson('tasbih_$date', Map<String, dynamic>.from(remoteCounts));
